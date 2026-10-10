@@ -34,3 +34,19 @@ def test_unknown_student_returns_404(client):
 
 def test_health(client):
     assert client.get("/health").get_json() == {"status": "ok"}
+
+
+def test_student_is_shown_on_page_after_adding(client):
+    client.post("/grades", data={"student": "Айдар", "subject": "DevOps", "grade": "5"})
+    html = client.get("/").get_data(as_text=True)
+    assert "Айдар" in html and "DevOps" in html and "5.00" in html
+
+
+def test_error_message_is_shown_for_missing_grade(client):
+    r = client.post("/grades", data={"student": "Айдар", "subject": "DevOps"})
+    assert r.status_code == 400
+    assert "Выберите оценку" in r.get_data(as_text=True)
+
+
+def test_css_is_served(client):
+    assert client.get("/static/style.css").status_code == 200

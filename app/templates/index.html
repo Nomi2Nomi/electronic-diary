@@ -1,18 +1,70 @@
 <!doctype html>
 <html lang="ru">
-<head><meta charset="utf-8"><title>Электронный дневник</title></head>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Электронный дневник</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
 <body>
-  <h1>Электронный дневник</h1>
-  {% if error %}<p style="color:red">{{ error }}</p>{% endif %}
-  <form method="post" action="/grades">
-    <input name="student" placeholder="Студент" required>
-    <input name="subject" placeholder="Предмет" required>
-    <input name="grade" type="number" min="1" max="5" placeholder="Оценка" required>
-    <button>Добавить</button>
-  </form>
-  <table border="1" cellpadding="6">
-    <tr><th>Студент</th><th>Средний балл</th></tr>
-    {% for name, avg in rows %}<tr><td>{{ name }}</td><td>{{ avg }}</td></tr>{% endfor %}
-  </table>
+  <main>
+    <header>
+      <h1>Электронный дневник</h1>
+      <p class="lead">Ставьте оценки и следите за средним баллом.</p>
+    </header>
+
+    <section class="panel" aria-labelledby="add-title">
+      <h2 id="add-title">Новая оценка</h2>
+      {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
+      <form method="post" action="{{ url_for('add_grade') }}">
+        <div class="row">
+          <label>Студент
+            <input name="student" list="students-list" value="{{ form.get('student', '') }}" autocomplete="off" required>
+          </label>
+          <label>Предмет
+            <input name="subject" list="subjects-list" value="{{ form.get('subject', '') }}" autocomplete="off" required>
+          </label>
+        </div>
+        <datalist id="students-list">{% for s in students %}<option value="{{ s.name }}">{% endfor %}</datalist>
+        <datalist id="subjects-list">{% for s in subjects_all %}<option value="{{ s }}">{% endfor %}</datalist>
+
+        <fieldset>
+          <legend>Оценка</legend>
+          <div class="scale">
+            {% for g in range(1, 6) %}
+            <input type="radio" id="g{{ g }}" name="grade" value="{{ g }}" class="t{{ g }}" {% if form.get('grade') == g|string %}checked{% endif %} required>
+            <label for="g{{ g }}">{{ g }}</label>
+            {% endfor %}
+          </div>
+        </fieldset>
+        <button type="submit">Поставить оценку</button>
+      </form>
+    </section>
+
+    <section aria-labelledby="list-title">
+      <h2 id="list-title">Успеваемость</h2>
+      {% if students %}
+        {% for st in students %}
+        <article class="student">
+          <div class="head">
+            <h3>{{ st.name }}</h3>
+            <span class="avg {{ st.tone }}" title="Средний балл">{{ '%.2f'|format(st.average) }}</span>
+          </div>
+          <ul>
+            {% for sub in st.subjects %}
+            <li>
+              <span class="subj">{{ sub.name }}</span>
+              <span class="marks">{% for m in sub.grades %}<span class="mark t{{ m }}">{{ m }}</span>{% endfor %}</span>
+              <span class="subavg {{ sub.tone }}">{{ '%.2f'|format(sub.average) }}</span>
+            </li>
+            {% endfor %}
+          </ul>
+        </article>
+        {% endfor %}
+      {% else %}
+        <p class="empty">Пока нет оценок. Заполните форму выше, чтобы добавить первую.</p>
+      {% endif %}
+    </section>
+  </main>
 </body>
 </html>
